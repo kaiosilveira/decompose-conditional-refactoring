@@ -19,8 +19,12 @@ export function calculateCharge(aDate, plan, quantity) {
     return !aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd);
   }
 
+  function summerCharge() {
+    return quantity * plan.summerRate;
+  }
+
   if (summer()) {
-    charge = quantity * plan.summerRate;
+    charge = summerCharge();
   } else {
     charge = quantity * plan.regularRate + plan.regularServiceCharge;
   }
