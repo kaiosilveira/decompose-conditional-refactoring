@@ -13,8 +13,6 @@ export class ManagedDate {
 }
 
 export function calculateCharge(aDate, plan, quantity) {
-  let charge;
-
   function summer() {
     return !aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd);
   }
@@ -27,11 +25,6 @@ export function calculateCharge(aDate, plan, quantity) {
     return quantity * plan.regularRate + plan.regularServiceCharge;
   }
 
-  if (summer()) {
-    charge = summerCharge();
-  } else {
-    charge = regularCharge();
-  }
-
+  const charge = summer() ? summerCharge() : regularCharge();
   return charge;
 }
