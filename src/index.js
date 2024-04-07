@@ -23,10 +23,14 @@ export function calculateCharge(aDate, plan, quantity) {
     return quantity * plan.summerRate;
   }
 
+  function regularCharge() {
+    return quantity * plan.regularRate + plan.regularServiceCharge;
+  }
+
   if (summer()) {
     charge = summerCharge();
   } else {
-    charge = quantity * plan.regularRate + plan.regularServiceCharge;
+    charge = regularCharge();
   }
 
   return charge;
