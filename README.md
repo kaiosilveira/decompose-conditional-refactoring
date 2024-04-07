@@ -1,45 +1,10 @@
-[![Continuous Integration](https://github.com/kaiosilveira/refactoring-catalog-template/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/refactoring-catalog-template/actions/workflows/ci.yml)
-
-# Refactoring catalog repository template
-
-This is a quick template to help me get a new refactoring repo going.
-
-## Things to do after creating a repo off of this template
-
-1. Run `yarn tools:cli prepare-repository -r <repo_name>`. It will:
-
-- Update the `README.md` file with the actual repository name, CI badge, and commit history link
-- Update `package.json` with the repository's name and remote URL
-- Update the repo's homepage on GitHub with:
-  - A description
-  - A website link to https://github.com/kaiosilveira/refactoring
-  - The following labels: javascript, refactoring, [REPOSITORY_NAME]
-
-2. Replace the lorem ipsum text sections below with actual text
-
-## Useful commands
-
-- Generate markdown containing a diff with patch information based on a range of commits:
-
-```bash
-yarn tools:cli generate-diff -f <first_commit_sha> -l <last_commit_sha>
-```
-
-- To generate the commit history table for the last section, including the correct links:
-
-```bash
-yarn tools:cli generate-cmt-table -r [REPOSITORY_NAME]
-```
-
----
+[![Continuous Integration](https://github.com/kaiosilveira/decompose-conditional-refactoring/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/decompose-conditional-refactoring/actions/workflows/ci.yml)
 
 ℹ️ _This repository is part of my Refactoring catalog based on Fowler's book with the same title. Please see [kaiosilveira/refactoring](https://github.com/kaiosilveira/refactoring) for more details._
 
 ---
 
-# Refactoring name
-
-**Formerly: Old name**
+# Decompose Conditional
 
 <table>
 <thead>
@@ -51,7 +16,13 @@ yarn tools:cli generate-cmt-table -r [REPOSITORY_NAME]
 <td>
 
 ```javascript
-result = initial.code;
+let charge;
+
+if (!aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd)) {
+  charge = quantity * plan.summerRate;
+} else {
+  charge = quantity * plan.regularRate + plan.regularServiceCharge;
+}
 ```
 
 </td>
@@ -59,11 +30,8 @@ result = initial.code;
 <td>
 
 ```javascript
-result = newCode();
-
-function newCode() {
-  return 'new code';
-}
+if (summer()) charge = summerCharge();
+else charge = regularCharge();
 ```
 
 </td>
@@ -71,46 +39,147 @@ function newCode() {
 </tbody>
 </table>
 
-**Inverse of: [Another refactoring](https://github.com/kaiosilveira/refactoring)**
-
-**Refactoring introduction and motivation** dolore sunt deserunt proident enim excepteur et cillum duis velit dolor. Aute proident laborum officia velit culpa enim occaecat officia sunt aute labore id anim minim. Eu minim esse eiusmod enim nulla Lorem. Enim velit in minim anim anim ad duis aute ipsum voluptate do nulla. Ad tempor sint dolore et ullamco aute nulla irure sunt commodo nulla aliquip.
+Conditionals can get tricky fast, be it because of the length of each conditional leg, because of the rules applied to each branch, or because of the intrinsic nature of the conditions. This refactoring helps bring clarity to all these cases.
 
 ## Working example
 
-**Working example general explanation** proident reprehenderit mollit non voluptate ea aliquip ad ipsum anim veniam non nostrud. Cupidatat labore occaecat labore veniam incididunt pariatur elit officia. Aute nisi in nulla non dolor ullamco ut dolore do irure sit nulla incididunt enim. Cupidatat aliquip minim culpa enim. Fugiat occaecat qui nostrud nostrud eu exercitation Lorem pariatur fugiat ea consectetur pariatur irure. Officia dolore veniam duis duis eu eiusmod cupidatat laboris duis ad proident adipisicing. Minim veniam consectetur ut deserunt fugiat id incididunt reprehenderit.
+Our working example, extracted from the book, is a program that calculates the charge for a plan, applying special rules if it is summertime. The code looks like this:
+
+```javascript
+export function calculateCharge(aDate, plan, quantity) {
+  let charge;
+
+  if (!aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd)) {
+    charge = quantity * plan.summerRate;
+  } else {
+    charge = quantity * plan.regularRate + plan.regularServiceCharge;
+  }
+
+  return charge;
+}
+```
 
 ### Test suite
 
-Occaecat et incididunt aliquip ex id dolore. Et excepteur et ea aute culpa fugiat consectetur veniam aliqua. Adipisicing amet reprehenderit elit qui.
+The test suite covers the regular case and the special case:
 
 ```javascript
-describe('functionBeingRefactored', () => {
-  it('should work', () => {
-    expect(0).toEqual(1);
+describe('calculateCharge', () => {
+  it('should calculate the charge for the summer', () => {
+    const quantity = 10;
+    const aDate = new ManagedDate('2021-07-01');
+    const plan = {
+      summerStart: new Date('2021-06-01'),
+      summerEnd: new Date('2021-09-01'),
+      summerRate: 1,
+      regularRate: 2,
+      regularServiceCharge: 3,
+    };
+
+    expect(calculateCharge(aDate, plan, quantity)).toEqual(10);
+  });
+
+  it('should calculate the charge for the other seasons', () => {
+    const quantity = 10;
+    const aDate = new ManagedDate(new Date('2021-01-01'));
+    const plan = {
+      summerStart: new Date('2021-06-01'),
+      summerEnd: new Date('2021-09-01'),
+      summerRate: 1,
+      regularRate: 2,
+      regularServiceCharge: 3,
+    };
+
+    expect(calculateCharge(aDate, plan, quantity)).toEqual(23);
   });
 });
 ```
 
-Magna ut tempor et ut elit culpa id minim Lorem aliqua laboris aliqua dolor. Irure mollit ad in et enim consequat cillum voluptate et amet esse. Fugiat incididunt ea nulla cupidatat magna enim adipisicing consequat aliquip commodo elit et. Mollit aute irure consequat sunt. Dolor consequat elit voluptate aute duis qui eu do veniam laborum elit quis.
+And with these tests in place, we're safe to move forward.
 
 ### Steps
 
-**Step 1 description** mollit eu nulla mollit irure sint proident sint ipsum deserunt ad consectetur laborum incididunt aliqua. Officia occaecat deserunt in aute veniam sunt ad fugiat culpa sunt velit nulla. Pariatur anim sit minim sit duis mollit.
+We start by **[extracting](https://github.com/kaiosilveira/extract-function-refactoring)** the conditions that define whether or not it's summertime into its own function:
 
 ```diff
-diff --git a/src/price-order/index.js b/src/price-order/index.js
-@@ -3,6 +3,11 @@
--module.exports = old;
-+module.exports = new;
++++ b/src/index.js
+@@ -15,7 +15,11 @@export class ManagedDate {
+ export function calculateCharge(aDate, plan, quantity) {
+   let charge;
+-  if (!aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd)) {
++  function summer() {
++    return !aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd);
++  }
++
++  if (summer()) {
+     charge = quantity * plan.summerRate;
+   } else {
+     charge = quantity * plan.regularRate + plan.regularServiceCharge;
 ```
 
-**Step n description** mollit eu nulla mollit irure sint proident sint ipsum deserunt ad consectetur laborum incididunt aliqua. Officia occaecat deserunt in aute veniam sunt ad fugiat culpa sunt velit nulla. Pariatur anim sit minim sit duis mollit.
+Then, we start extracting each branch of the conditional. We start with the `then` case, i.e., the charge calculation applied to summertime:
 
 ```diff
-diff --git a/src/price-order/index.js b/src/price-order/index.js
-@@ -3,6 +3,11 @@
--module.exports = old;
-+module.exports = new;
++++ b/src/index.js
+@@ -19,8 +19,12 @@ export function calculateCharge(aDate, plan, quantity) {
+     return !aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd);
+   }
++  function summerCharge() {
++    return quantity * plan.summerRate;
++  }
++
+   if (summer()) {
+-    charge = quantity * plan.summerRate;
++    charge = summerCharge();
+   } else {
+     charge = quantity * plan.regularRate + plan.regularServiceCharge;
+   }
+```
+
+And then we do the same for the `else` clause:
+
+```diff
++++ b/src/index.js
+@@ -23,10 +23,14 @@ export function calculateCharge(aDate, plan, quantity) {
+     return quantity * plan.summerRate;
+   }
++  function regularCharge() {
++    return quantity * plan.regularRate + plan.regularServiceCharge;
++  }
++
+   if (summer()) {
+     charge = summerCharge();
+   } else {
+-    charge = quantity * plan.regularRate + plan.regularServiceCharge;
++    charge = regularCharge();
+   }
+   return charge;
+```
+
+As a final touch, we can simplify the code by replacing the `if` statement with a ternary operator:
+
+```diff
++++ b/src/index.js
+@@ -13,8 +13,6 @@ export class ManagedDate {
+ }
+ export function calculateCharge(aDate, plan, quantity) {
+-  let charge;
+-
+   function summer() {
+     return !aDate.isBefore(plan.summerStart) && !aDate.isAfter(plan.summerEnd);
+   }
+@@ -27,11 +25,6 @@ export function calculateCharge(aDate, plan, quantity) {
+     return quantity * plan.regularRate + plan.regularServiceCharge;
+   }
+-  if (summer()) {
+-    charge = summerCharge();
+-  } else {
+-    charge = regularCharge();
+-  }
+-
++  const charge = summer() ? summerCharge() : regularCharge();
+   return charge;
+ }
 ```
 
 And that's it!
@@ -119,10 +188,11 @@ And that's it!
 
 Below there's the commit history for the steps detailed above.
 
-| Commit SHA                                                                  | Message                  |
-| --------------------------------------------------------------------------- | ------------------------ |
-| [cmt-sha-1](https://github.com/kaiosilveira/[REPOSITORY_NAME]/commit-SHA-1) | description of commit #1 |
-| [cmt-sha-2](https://github.com/kaiosilveira/[REPOSITORY_NAME]/commit-SHA-2) | description of commit #2 |
-| [cmt-sha-n](https://github.com/kaiosilveira/[REPOSITORY_NAME]/commit-SHA-n) | description of commit #n |
+| Commit SHA                                                                                                                   | Message                                                |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [3faf4bb](https://github.com/kaiosilveira/decompose-conditional-refactoring/commit/3faf4bb12961939d793ddec23bde9b4d30639f0b) | extract summer conditions to its own function          |
+| [5542a9d](https://github.com/kaiosilveira/decompose-conditional-refactoring/commit/5542a9dcc3c98be44ace3ced765f7af32ebe2a86) | extract summer charge calculation to its own function  |
+| [4859092](https://github.com/kaiosilveira/decompose-conditional-refactoring/commit/4859092dae9659a97142d16cf24669aeba0f8b64) | extract regular charge calculation to its own function |
+| [9e8fd5e](https://github.com/kaiosilveira/decompose-conditional-refactoring/commit/9e8fd5e0566bf8018e2ebf267cb2ffbe1a8fd7c6) | replace if statement with ternary operator             |
 
-For the full commit history for this project, check the [Commit History tab](https://github.com/kaiosilveira/[REPOSITORY_NAME]/commits/main).
+For the full commit history for this project, check the [Commit History tab](https://github.com/kaiosilveira/decompose-conditional-refactoring/commits/main).
